@@ -176,17 +176,8 @@ public class SlidingMenu extends ViewGroup {
 
 
     private class CallBack extends ViewDragHelper.Callback {
-
-        long lastTryCaptureView;
-        long currentTime;
         @Override
         public boolean tryCaptureView(View child, int pointerId) {
-            currentTime = System.currentTimeMillis();
-            L.e("currentTime-lastTryCaptureView",currentTime-lastTryCaptureView);
-            if(currentTime-lastTryCaptureView<80){//抓取间隔太快 会错位,这行代码为了解决这个问题
-                lastTryCaptureView = currentTime;
-                return false;
-            }
             onStateChanged(STATE_CAPTURE);
             if(child == content){
                 L.e("content tryCaptureView", "pointerId", pointerId);
@@ -194,7 +185,6 @@ public class SlidingMenu extends ViewGroup {
 
                 L.e("menu tryCaptureView", "pointerId", pointerId);
             }
-            lastTryCaptureView = currentTime;
             return true;
         }
 
