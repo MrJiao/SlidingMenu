@@ -17,6 +17,8 @@
         </activity>
         <activity android:name=".KugouActivity"/>
         <activity android:name=".QQActivity"/>
+        <activity android:name=".Other1Activity"/>
+        <activity android:name=".XuanZhuanActivity"/>
     </application>
 
 </manifest>

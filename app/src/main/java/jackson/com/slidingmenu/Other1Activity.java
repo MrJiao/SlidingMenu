@@ -2,9 +2,6 @@ package jackson.com.slidingmenu;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
-import android.view.View;
-
-import com.jackson.commonutillib.L;
 
 import jackson.com.slidingmenulib.SlidingMenu;
 
@@ -14,18 +11,16 @@ import jackson.com.slidingmenulib.SlidingMenu;
  * Version : 1
  * Details :
  */
-public class QQActivity extends FragmentActivity {
+public class Other1Activity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qq);
         SlidingMenu sm = (SlidingMenu) findViewById(R.id.sm);
-        SlidingMenu.Builder builder = sm.getBuilder(
-                new ContentFragment(),
-                new MenuFragment(),
-                getFragmentManager(), 870);
-        builder.setMenuStartLeft(-500)
+        sm.getBuilder(new ContentFragment(),new MenuFragment(),getFragmentManager(), 870)
+                .setContentEndLeft(0)
+                .setCover(true)
                 .build();
     }
 }

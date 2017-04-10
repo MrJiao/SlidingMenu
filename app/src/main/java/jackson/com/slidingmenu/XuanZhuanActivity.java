@@ -14,7 +14,7 @@ import jackson.com.slidingmenulib.SlidingMenu;
  * Version : 1
  * Details :
  */
-public class KugouActivity extends FragmentActivity {
+public class XuanZhuanActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,22 +22,22 @@ public class KugouActivity extends FragmentActivity {
         setContentView(R.layout.activity_kugou);
         SlidingMenu sm = (SlidingMenu) findViewById(R.id.sm);
         sm.getBuilder(new ContentFragment(), new MenuFragment(), getFragmentManager(), 850)
-        .setMenuStartLeft(-350)
+        .setMenuStartLeft(0)
         .setOnViewChangedListener(new ScaleChange())
-        .setOnStateChangedListener(new StateListener())
         .build();
     }
 
 
     class ScaleChange implements SlidingMenu.OnViewChangedListener {
 
-        private boolean first=true;
+        private boolean contentfirst=true;
+        private boolean menufirst=true;
 
         @Override
         public void onContentChanged(View content, float percent) {
-            if(first){
+            if(contentfirst){
                 content.setPivotX(0);
-                first = false;
+                contentfirst = false;
             }
             content.setScaleX(1 - .3f * percent);
             content.setScaleY(1 - .3f * percent);
@@ -46,35 +46,13 @@ public class KugouActivity extends FragmentActivity {
 
         @Override
         public void onMenuChanged(View menu, float percent) {
-            menu.setScaleX(.7f + .3f * percent);
-            menu.setScaleY(.7f + .3f * percent);
+            if(menufirst){
+                menu.setPivotX(0);
+                menufirst = false;
+            }
+            menu.setRotationY(90*(1-percent));
             menu.setAlpha(.2f+.8f * percent);
         }
     }
-
-
-    class StateListener implements SlidingMenu.OnStateChangedListener {
-        @Override
-        public void onState(int state) {
-            String s = "";
-            switch (state) {
-                case SlidingMenu.STATE_START:
-                    s = "STATE_START";
-                    break;
-                case SlidingMenu.STATE_MOVE:
-                    s = "STATE_MOVE";
-                    break;
-                case SlidingMenu.STATE_END:
-                    s = "STATE_END";
-                    break;
-                case SlidingMenu.STATE_CAPTURE:
-                    s = "STATE_CAPTURE";
-                    break;
-            }
-            L.e("onState", s);
-        }
-
-    }
-
 
 }

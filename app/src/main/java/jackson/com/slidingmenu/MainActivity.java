@@ -13,16 +13,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         findViewById(R.id.btn_kugou).setOnClickListener(this);
         findViewById(R.id.btn_qq).setOnClickListener(this);
+        findViewById(R.id.btn_other1).setOnClickListener(this);
+        findViewById(R.id.btn_roate).setOnClickListener(this);
     }
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.btn_kugou:
-                startActivity(new Intent(this,KugouActivity.class));
+                startActivity(new Intent(this, KugouActivity.class));
                 break;
             case R.id.btn_qq:
-                startActivity(new Intent(this,QQActivity.class));
+                startActivity(new Intent(this, QQActivity.class));
+                break;
+            case R.id.btn_other1:
+                startActivity(new Intent(this, Other1Activity.class));
+                break; case R.id.btn_roate:
+                startActivity(new Intent(this, XuanZhuanActivity.class));
                 break;
         }
     }
