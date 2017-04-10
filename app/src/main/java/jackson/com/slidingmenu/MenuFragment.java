@@ -14,11 +14,24 @@ import android.view.ViewGroup;
  */
 public class MenuFragment extends Fragment {
 
+    public void setBackgroud(int idRes){
+        Bundle arguments = getArguments();
+        if(arguments==null){
+            arguments = new Bundle();
+        }
+        arguments.putInt("BACKGROUND",idRes);
+        setArguments(arguments);
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_menu, container,false);
-
+        Bundle arguments = getArguments();
+        if(arguments!=null){
+            int backRes = arguments.getInt("BACKGROUND");
+            v.findViewById(R.id.rl).setBackgroundResource(backRes);
+        }
         return v;
     }
 }

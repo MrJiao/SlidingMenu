@@ -19,7 +19,9 @@ import java.util.Arrays;
 /**
  * Created by Jackson on 2016/4/14.
  * Version : 1
- * Details :
+ * Details : 修改了ViewDragHelper的源码
+ * 增加setDuration(long time)
+ * 和setInterpolator(ViewGroup forParent, Interpolator interpolator) 方法
  */
 public class MyViewDragHelper {
     private static final String TAG = "ViewDragHelper";

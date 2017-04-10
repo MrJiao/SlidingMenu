@@ -14,18 +14,18 @@ import jackson.com.slidingmenulib.SlidingMenu;
  * Version : 1
  * Details :
  */
-public class GroupActivity extends FragmentActivity {
+public class KugouActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_group);
+        setContentView(R.layout.activity_kugou);
         SlidingMenu sm = (SlidingMenu) findViewById(R.id.sm);
         SlidingMenu.Builder builder = sm.getBuilder(
                 new ContentFragment(),
                 new MenuFragment(),
                 getFragmentManager(),
-                899, -500, 900
+                900, -500, 900,900
         );
         builder.setOnViewChangedListener(new ScaleChange());
        // builder.setOnStateChangedListener(new StateListener());
@@ -45,14 +45,14 @@ public class GroupActivity extends FragmentActivity {
             }
             content.setScaleX(1 - .3f * percent);
             content.setScaleY(1 - .3f * percent);
+            content.setAlpha(1 - .5f * percent);
         }
 
         @Override
         public void onMenuChanged(View menu, float percent) {
             menu.setScaleX(.7f + .3f * percent);
             menu.setScaleY(.7f + .3f * percent);
-           // menu.setRotationY(90-90*percent);
-            menu.setAlpha(.5f + .5f * percent);
+            menu.setAlpha(.2f+.8f * percent);
         }
     }
 
