@@ -4,8 +4,8 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.view.View;
 
-import com.jackson.commonutillib.L;
 
+import jackson.com.slidingmenulib.L;
 import jackson.com.slidingmenulib.SlidingMenu;
 
 

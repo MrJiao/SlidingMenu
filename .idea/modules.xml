@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Lib/CommonUtil/CommonUtil.iml" filepath="$PROJECT_DIR$/Lib/CommonUtil/CommonUtil.iml" />
       <module fileurl="file://$PROJECT_DIR$/SlidingMenu.iml" filepath="$PROJECT_DIR$/SlidingMenu.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/slidingmenulib/slidingmenulib.iml" filepath="$PROJECT_DIR$/slidingmenulib/slidingmenulib.iml" />

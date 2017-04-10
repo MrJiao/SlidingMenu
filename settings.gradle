@@ -1,2 +1,1 @@
-include ':app', ':slidingmenulib', ':CommonUtil'
-project(':CommonUtil').projectDir = new File('Lib/CommonUtil')
+include ':app', ':slidingmenulib'

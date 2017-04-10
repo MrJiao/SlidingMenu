@@ -1,4 +1,4 @@
-package com.jackson.commonutillib;
+package jackson.com.slidingmenulib;
 
 import android.util.Log;
 
