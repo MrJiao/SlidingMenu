@@ -228,13 +228,18 @@ public class SlidingMenu extends ViewGroup {
         }
 
         private int getContentNewLeft(int oldLeft){
-            int left = (int) (oldLeft + contentVel * moveDx);
+            final int left = (int) (oldLeft + contentVel * moveDx);
+            if(left>contentEndLeft)
+                return contentEndLeft;
             L.e("getContentNewLeft","oldLeft",oldLeft,"contentVel",contentVel,"moveDx",moveDx,"newLeft",left);
             return left;
         }
 
         private int getMenuNewLeft(int oldLeft){
-            int left = (int) (oldLeft+menuVel*moveDx);
+            final int left = (int) (oldLeft+menuVel*moveDx);
+            if(left>0){
+                return 0;
+            }
             L.e("getMenuNewLeft","oldLeft",oldLeft,"menuVel",menuVel,"moveDx",moveDx,"menuVel*moveDx",menuVel*moveDx,"newLeft",left);
             return left;
         }
