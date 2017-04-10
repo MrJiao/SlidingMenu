@@ -462,6 +462,11 @@ public class SlidingMenu extends ViewGroup {
             SlidingMenu.this.menuVel = (float)Math.abs(menuStartLeft)/(float)slideWidth;
             SlidingMenu.this.onViewChangedListener = onViewChangedListener;
             SlidingMenu.this.stateChangedListener = stateChangedListener;
+
+            if(menuStartLeft==0 && contentEndLeft==0 ){
+                throw new RuntimeException("不能同时设置 menuStartLeft、contentEndLeft为0");
+            }
+
             if(content!=null && menu!=null){
                 addView(menu);
                 addView(content);

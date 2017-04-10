@@ -1,4 +1,4 @@
-
+﻿
 # 高可配置SlidingMenu
 ViewGroup + ViewDragHelper 实现的SlidingMenu ，简单配置可实现任意效果
 ### QQ效果
@@ -68,8 +68,9 @@ ViewGroup + ViewDragHelper 实现的SlidingMenu ，简单配置可实现任意�
 
 ### 类 SlidingMenu.Builder
 介绍：这个类提供对SlidingMenu的所有设置
-api  | 介绍 
----|---
+  |  
+|api         | 介绍   |
+| -----------|:-----:|
 Builder(View content, View menu, int menuWidth) | 构造方法
 Builder(Fragment content, Fragment menu, FragmentManager fragmentManager, int menuWidth) | 构造方法
 setMenuStartLeft(int menuStartLeft) | 设置menu的开始位置，通常为负数 单位px
@@ -79,5 +80,7 @@ setOnViewChangedListener(OnViewChangedListener onViewChangedListener) | view状�
 setOnStateChangedListener(OnStateChangedListener stateChangedListener) | 状态监听
 
 
-
+### 注意：
+setMenuStartLeft(int menuStartLeft) 和 setContentEndLeft(int contentEndLeft)
+不能同时设置 Menu起始位置和Content结束位置为0 
 

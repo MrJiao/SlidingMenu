@@ -25,6 +25,7 @@ public class XuanZhuanActivity extends FragmentActivity {
         .setMenuStartLeft(0)
         .setOnViewChangedListener(new ScaleChange())
         .build();
+
     }
 
 
