@@ -6,3 +6,5 @@
 .DS_Store
 /build
 /captures
+/CommonUtil/.git
+/CommonUtil/build
