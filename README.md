@@ -68,6 +68,7 @@ ViewGroup + ViewDragHelper 实现的SlidingMenu ，简单配置可实现任意�
 
 ### 类 SlidingMenu.Builder
 介绍：这个类提供对SlidingMenu的所有设置
+![image](https://github.com/MrJiao/SlidingMenu/blob/master/github_res/api.png)
   |  
 |api         | 介绍   |
 | -----------|:-----:|
