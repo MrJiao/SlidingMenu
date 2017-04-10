@@ -24,9 +24,9 @@ public class QQActivity extends FragmentActivity {
         SlidingMenu.Builder builder = sm.getBuilder(
                 new ContentFragment(),
                 new MenuFragment(),
-                getFragmentManager(),
-                900, -300, 0,800
-        );
-        builder.build();
+                getFragmentManager(), 800);
+        builder.setContentEndLeft(800)
+                .setMenuStartLeft(-500)
+                .build();
     }
 }

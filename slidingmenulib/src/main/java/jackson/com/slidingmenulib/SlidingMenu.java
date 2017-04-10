@@ -54,7 +54,6 @@ public class SlidingMenu extends ViewGroup {
     private int menuWidth;
     private float contentVel;//contentView的横坐标变化率
     private float menuVel;//menuView的横坐标变化率
-    private int slideWidth;
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -125,11 +124,25 @@ public class SlidingMenu extends ViewGroup {
         L.e("mWidth",mWidth,"mHeight",mHeight);
         setMeasuredDimension(mWidth, mHeight);
     }
-
+    
     @Override
     public void computeScroll() {
         if (dragHelper.continueSettling(true)) {
             invalidate();
+        }else {
+            if(contentEndLeft!=0){
+                if(content.getLeft()<4){
+                    onStateChanged(STATE_START);
+                }else {
+                    onStateChanged(STATE_END);
+                }
+            }else {
+                if(menu.getLeft()<menuStartLeft+4){
+                    onStateChanged(STATE_START);
+                }else {
+                    onStateChanged(STATE_END);
+                }
+            }
         }
     }
 
@@ -140,21 +153,17 @@ public class SlidingMenu extends ViewGroup {
 
 
     private float lastX;
-    private float downX;
     private float currentX;
     private float moveDx;
-    private float moveLength;
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (MotionEventCompat.getActionMasked(event)){
             case MotionEvent.ACTION_DOWN:
                 lastX = event.getRawX();
-                downX = lastX;
                 break;
             case MotionEvent.ACTION_MOVE:
                 currentX = event.getRawX();
                 moveDx = currentX - lastX;
-                moveLength = currentX - downX;
                 lastX = currentX;
                 L.e("onTouchEvent","moveDx",moveDx);
                 break;
@@ -174,15 +183,17 @@ public class SlidingMenu extends ViewGroup {
         public boolean tryCaptureView(View child, int pointerId) {
             currentTime = System.currentTimeMillis();
             L.e("currentTime-lastTryCaptureView",currentTime-lastTryCaptureView);
-            if(currentTime-lastTryCaptureView<180){//抓取间隔太快 会错位,这行代码为了解决这个问题
+            if(currentTime-lastTryCaptureView<80){//抓取间隔太快 会错位,这行代码为了解决这个问题
                 lastTryCaptureView = currentTime;
                 return false;
             }
             onStateChanged(STATE_CAPTURE);
-            if(child == content)
+            if(child == content){
                 L.e("content tryCaptureView", "pointerId", pointerId);
-            else
+            }else {
+
                 L.e("menu tryCaptureView", "pointerId", pointerId);
+            }
             lastTryCaptureView = currentTime;
             return true;
         }
@@ -245,7 +256,8 @@ public class SlidingMenu extends ViewGroup {
             if (changedView == content) {
                 L.e("content onViewPositionChanged", "left", left, "top", top, "dx", dx, "dy", dy);
                 if(contentEndLeft==0){
-                    changePercent = moveLength/slideWidth;
+                    int menuNewLeft = getMenuNewLeft(menu.getLeft());
+                    changePercent = (float) (menuStartLeft-menuNewLeft) / (float) menuStartLeft;
                 }else {
                     changePercent = (float) left / (float) contentEndLeft;
                 }
@@ -257,7 +269,8 @@ public class SlidingMenu extends ViewGroup {
                 L.e("menu onViewPositionChanged", "left", left, "top", top, "dx", dx, "dy", dy);
 
                 if(menuStartLeft==0){
-                    changePercent = moveLength/slideWidth;
+                    int contentNewLeft = getContentNewLeft(content.getLeft());
+                    changePercent = (float) contentNewLeft / (float) contentEndLeft;
                 }else {
                     changePercent = (float) (menuStartLeft-left) / (float) menuStartLeft;
                 }
@@ -313,13 +326,19 @@ public class SlidingMenu extends ViewGroup {
         }
 
 
-        private void smooth2Start() {
-            dragHelper.smoothSlideViewTo(content, 0, 0);
+        private void smooth2Start(boolean isMoveContent) {
+            if(isMoveContent)
+                dragHelper.smoothSlideViewTo(content, 0, 0);
+            else
+                dragHelper.smoothSlideViewTo(menu, menuStartLeft, 0);
             invalidate();
         }
 
-        private void smooth2End() {
-            dragHelper.smoothSlideViewTo(content, contentEndLeft, 0);
+        private void smooth2End(boolean isMoveContent) {
+            if(isMoveContent)
+                dragHelper.smoothSlideViewTo(content, contentEndLeft, 0);
+            else
+                dragHelper.smoothSlideViewTo(menu, 0, 0);
             invalidate();
         }
 
@@ -334,48 +353,37 @@ public class SlidingMenu extends ViewGroup {
             onStateChanged(STATE_MOVE);
             L.e("onViewReleased", "xvel", xvel, "yvel", yvel);
             if (xvel > 600) {
-                smooth2End();
+                smooth2End(contentEndLeft!=0);
                 return;
             }
             if (xvel < -600) {
-                smooth2Start();
+                smooth2Start(contentEndLeft!=0);
                 return;
             }
             if(contentEndLeft==0){
-                if(menuStartLeft==0){
-                    smooth2StartOrEnd((int) moveLength,slideWidth);
-                }else {
-                    smooth2StartOrEnd(menu.getLeft(),menuStartLeft);
-                }
+                smooth2StartOrEnd(menu.getLeft(),menuStartLeft,false);
             }else {
-                smooth2StartOrEnd(content.getLeft(),contentEndLeft);
+                smooth2StartOrEnd(content.getLeft(),contentEndLeft,true);
             }
-
-
-
         }
 
-        private void smooth2StartOrEnd(int currentLeft,int endLeft){
+        private void smooth2StartOrEnd(int currentLeft,int endLeft,boolean isMoveContent){
             if (currentLeft > endLeft / 2) {
-                smooth2End();
+                smooth2End(isMoveContent);
             } else {
-                smooth2Start();
+                smooth2Start(isMoveContent);
             }
         }
 
     }
 
-
-
-
-    public Builder getBuilder(View content, View menu, int menuWidth, int menuStartLeft, int contentEndLeft,int slideWidth) {
-        return new Builder(content, menu, menuWidth, menuStartLeft, contentEndLeft,slideWidth);
+    public Builder getBuilder(View content, View menu, int menuWidth) {
+        return new Builder(content, menu, menuWidth);
     }
 
-    public Builder getBuilder(Fragment content, Fragment menu, FragmentManager fragmentManager, int menuWidth, int menuStartLeft, int contentEndLeft,int slideWidth) {
-        return new Builder(content, menu,fragmentManager, menuWidth, menuStartLeft, contentEndLeft,slideWidth);
+    public Builder getBuilder(Fragment content, Fragment menu, FragmentManager fragmentManager, int menuWidth) {
+        return new Builder(content, menu,fragmentManager, menuWidth);
     }
-
 
     public class Builder {
         View menu;
@@ -387,22 +395,23 @@ public class SlidingMenu extends ViewGroup {
         int menuStartLeft;
         int contentEndLeft;
         int slideWidth;
+        boolean isCover;
         OnViewChangedListener onViewChangedListener;
         OnStateChangedListener stateChangedListener;
         private FrameLayout contentLayout;
         private FrameLayout menuLayout;
         private FragmentManager fragmentManager;
 
-        public Builder(View content, View menu, int menuWidth, int menuStartLeft, int contentEndLeft,int slideWidth) {
+        public Builder(View content, View menu, int menuWidth) {
             this.content = content;
             this.menu = menu;
             this.menuWidth = menuWidth;
-            this.menuStartLeft = menuStartLeft;
-            this.contentEndLeft = contentEndLeft;
-            this.slideWidth = slideWidth;
+            this.menuStartLeft = -menuWidth;
+            this.contentEndLeft = menuWidth;
+            this.slideWidth = menuWidth;
         }
 
-        public Builder(Fragment content, Fragment menu, FragmentManager fragmentManager, int menuWidth, int menuStartLeft, int contentEndLeft,int slideWidth){
+        public Builder(Fragment content, Fragment menu, FragmentManager fragmentManager, int menuWidth){
             contentLayout = new FrameLayout(getContext());
             contentLayout.setId(generateId());
             menuLayout = new FrameLayout(getContext());
@@ -410,11 +419,28 @@ public class SlidingMenu extends ViewGroup {
             this.contentFragment = content;
             this.menuFragment = menu;
             this.menuWidth = menuWidth;
-            this.menuStartLeft = menuStartLeft;
-            this.contentEndLeft = contentEndLeft;
+            this.menuStartLeft = -menuWidth;
+            this.contentEndLeft = menuWidth;
             this.fragmentManager = fragmentManager;
-            this.slideWidth = slideWidth;
+            this.slideWidth = menuWidth;
+            this.isCover = false;
         }
+
+        public Builder setMenuStartLeft(int menuStartLeft){
+            this.menuStartLeft = menuStartLeft;
+            return this;
+        }
+
+        public Builder setContentEndLeft(int contentEndLeft){
+            this.contentEndLeft = contentEndLeft;
+            return this;
+        }
+
+        public Builder setCover(boolean isCover){
+            this.isCover = isCover;
+            return this;
+        }
+
 
         public Builder setOnViewChangedListener(OnViewChangedListener onViewChangedListener){
             this.onViewChangedListener=onViewChangedListener;
@@ -434,7 +460,6 @@ public class SlidingMenu extends ViewGroup {
             SlidingMenu.this.contentEndLeft = contentEndLeft;
             SlidingMenu.this.contentVel = (float)contentEndLeft/(float)slideWidth;
             SlidingMenu.this.menuVel = (float)Math.abs(menuStartLeft)/(float)slideWidth;
-            SlidingMenu.this.slideWidth = slideWidth;
             SlidingMenu.this.onViewChangedListener = onViewChangedListener;
             SlidingMenu.this.stateChangedListener = stateChangedListener;
             if(content!=null && menu!=null){
@@ -445,8 +470,14 @@ public class SlidingMenu extends ViewGroup {
             }
 
             if(contentLayout!=null && menuLayout!=null){
-                addView(menuLayout);
-                addView(contentLayout);
+                if(isCover){
+                    addView(contentLayout);
+                    addView(menuLayout);
+                }else {
+                    addView(menuLayout);
+                    addView(contentLayout);
+                }
+
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.add(contentLayout.getId(),contentFragment,"content");
                 fragmentTransaction.add(menuLayout.getId(),menuFragment,"menu");

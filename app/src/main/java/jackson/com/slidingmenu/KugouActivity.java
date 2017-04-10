@@ -15,7 +15,7 @@ import jackson.com.slidingmenulib.SlidingMenu;
  * Details :
  */
 public class KugouActivity extends FragmentActivity {
-
+//  900, -500, 900,900
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -25,10 +25,10 @@ public class KugouActivity extends FragmentActivity {
                 new ContentFragment(),
                 new MenuFragment(),
                 getFragmentManager(),
-                900, -500, 900,900
+                900
         );
         builder.setOnViewChangedListener(new ScaleChange());
-       // builder.setOnStateChangedListener(new StateListener());
+        builder.setOnStateChangedListener(new StateListener());
         builder.build();
     }
 
