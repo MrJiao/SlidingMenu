@@ -43,7 +43,7 @@ public class SlidingMenu extends ViewGroup {
 
     private void init(Context context, AttributeSet attrs) {
         dragHelper = MyViewDragHelper.create(this,11f, new CallBack());
-        dragHelper.setDuration(330);
+        dragHelper.setDuration(duration);
     }
 
     private View menu;
@@ -53,6 +53,7 @@ public class SlidingMenu extends ViewGroup {
     private int menuWidth;
     private float contentVel;//contentView的横坐标变化率
     private float menuVel;//menuView的横坐标变化率
+    private int duration = 330;
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -395,6 +396,7 @@ public class SlidingMenu extends ViewGroup {
         private FrameLayout contentLayout;
         private FrameLayout menuLayout;
         private FragmentManager fragmentManager;
+        private int duration;
 
         public Builder(View content, View menu, int menuWidth) {
             this.content = content;
@@ -435,6 +437,11 @@ public class SlidingMenu extends ViewGroup {
             return this;
         }
 
+        public Builder setDuration(int duration){
+            this.duration = duration;
+            return this;
+        }
+
 
         public Builder setOnViewChangedListener(OnViewChangedListener onViewChangedListener){
             this.onViewChangedListener=onViewChangedListener;
@@ -456,6 +463,7 @@ public class SlidingMenu extends ViewGroup {
             SlidingMenu.this.menuVel = (float)Math.abs(menuStartLeft)/(float)slideWidth;
             SlidingMenu.this.onViewChangedListener = onViewChangedListener;
             SlidingMenu.this.stateChangedListener = stateChangedListener;
+            SlidingMenu.this.duration = duration;
 
             if(menuStartLeft==0 && contentEndLeft==0 ){
                 throw new RuntimeException("不能同时设置 menuStartLeft、contentEndLeft为0");
