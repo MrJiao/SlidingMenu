@@ -42,7 +42,7 @@ public class SlidingMenu extends ViewGroup {
     }
 
     private void init(Context context, AttributeSet attrs) {
-        dragHelper = MyViewDragHelper.create(this,11f, new CallBack());
+        dragHelper = MyViewDragHelper.create(this, new CallBack());
         dragHelper.setDuration(duration);
     }
 

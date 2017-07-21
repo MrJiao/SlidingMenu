@@ -1,11 +1,25 @@
+/*
+ * Copyright (C) 2013 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package jackson.com.slidingmenulib;
 
 import android.content.Context;
-import android.support.v4.view.MotionEventCompat;
-import android.support.v4.view.VelocityTrackerCompat;
 import android.support.v4.view.ViewCompat;
-import android.support.v4.widget.ScrollerCompat;
-import android.support.v4.widget.ViewDragHelper.Callback;
+import android.support.v4.widget.ViewDragHelper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -13,75 +27,91 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.animation.Interpolator;
+import android.widget.OverScroller;
 
 import java.util.Arrays;
 
 /**
- * Created by Jackson on 2016/4/14.
- * Version : 1
- * Details : 修改了ViewDragHelper的源码
- * 增加setDuration(long time)
- * 和setInterpolator(ViewGroup forParent, Interpolator interpolator) 方法
+ * ViewDragHelper is a utility class for writing custom ViewGroups. It offers a number
+ * of useful operations and state tracking for allowing a user to drag and reposition
+ * views within their parent ViewGroup.
  */
 public class MyViewDragHelper {
     private static final String TAG = "ViewDragHelper";
+
     /**
      * A null/invalid pointer ID.
      */
     public static final int INVALID_POINTER = -1;
+
     /**
      * A view is not currently being dragged or animating as a result of a fling/snap.
      */
     public static final int STATE_IDLE = 0;
+
     /**
      * A view is currently being dragged. The position is currently changing as a result
      * of user input or simulated user input.
      */
     public static final int STATE_DRAGGING = 1;
+
     /**
      * A view is currently settling into place as a result of a fling or
      * predefined non-interactive motion.
      */
     public static final int STATE_SETTLING = 2;
+
     /**
      * Edge flag indicating that the left edge should be affected.
      */
     public static final int EDGE_LEFT = 1 << 0;
+
     /**
      * Edge flag indicating that the right edge should be affected.
      */
     public static final int EDGE_RIGHT = 1 << 1;
+
     /**
      * Edge flag indicating that the top edge should be affected.
      */
     public static final int EDGE_TOP = 1 << 2;
+
     /**
      * Edge flag indicating that the bottom edge should be affected.
      */
     public static final int EDGE_BOTTOM = 1 << 3;
+
     /**
      * Edge flag set indicating all edges should be affected.
      */
     public static final int EDGE_ALL = EDGE_LEFT | EDGE_TOP | EDGE_RIGHT | EDGE_BOTTOM;
+
     /**
      * Indicates that a check should occur along the horizontal axis
      */
     public static final int DIRECTION_HORIZONTAL = 1 << 0;
+
     /**
      * Indicates that a check should occur along the vertical axis
      */
     public static final int DIRECTION_VERTICAL = 1 << 1;
+
     /**
      * Indicates that a check should occur along all axes
      */
     public static final int DIRECTION_ALL = DIRECTION_HORIZONTAL | DIRECTION_VERTICAL;
+
     private static final int EDGE_SIZE = 20; // dp
+
     private static final int BASE_SETTLE_DURATION = 256; // ms
     private static final int MAX_SETTLE_DURATION = 600; // ms
+
     // Current drag state; idle, dragging or settling
     private int mDragState;
+
     // Distance to travel before a drag may begin
     private int mTouchSlop;
+
     // Last known position/pointer tracking
     private int mActivePointerId = INVALID_POINTER;
     private float[] mInitialMotionX;
@@ -92,23 +122,28 @@ public class MyViewDragHelper {
     private int[] mEdgeDragsInProgress;
     private int[] mEdgeDragsLocked;
     private int mPointersDown;
+
     private VelocityTracker mVelocityTracker;
     private float mMaxVelocity;
     private float mMinVelocity;
+
     private int mEdgeSize;
     private int mTrackingEdges;
-    private ScrollerCompat mScroller;
-    private final Callback mCallback;
+
+    private OverScroller mScroller;
+
+    private final ViewDragHelper.Callback mCallback;
+
     private View mCapturedView;
     private boolean mReleaseInProgress;
+
     private final ViewGroup mParentView;
-
-
 
     /**
      * Interpolator defining the animation curve for mScroller
      */
     private static Interpolator sInterpolator = new Interpolator() {
+        @Override
         public float getInterpolation(float t) {
             t -= 1.0f;
             return t * t * t * t * t + 1.0f;
@@ -117,7 +152,7 @@ public class MyViewDragHelper {
 
     public void setInterpolator(ViewGroup forParent, Interpolator interpolator) {
         sInterpolator = interpolator;
-        mScroller = ScrollerCompat.create(forParent.getContext(), sInterpolator);
+        mScroller = new OverScroller(forParent.getContext(), sInterpolator);
     }
 
     private static int mDuration = -1;
@@ -127,6 +162,7 @@ public class MyViewDragHelper {
     }
 
     private final Runnable mSetIdleRunnable = new Runnable() {
+        @Override
         public void run() {
             setDragState(STATE_IDLE);
         }
@@ -136,23 +172,23 @@ public class MyViewDragHelper {
      * Factory method to create a new ViewDragHelper.
      *
      * @param forParent Parent view to monitor
-     * @param cb        Callback to provide information and receive events
+     * @param cb Callback to provide information and receive events
      * @return a new ViewDragHelper instance
      */
-    public static MyViewDragHelper create(ViewGroup forParent, Callback cb) {
+    public static MyViewDragHelper create(ViewGroup forParent, ViewDragHelper.Callback cb) {
         return new MyViewDragHelper(forParent.getContext(), forParent, cb);
     }
 
     /**
      * Factory method to create a new ViewDragHelper.
      *
-     * @param forParent   Parent view to monitor
+     * @param forParent Parent view to monitor
      * @param sensitivity Multiplier for how sensitive the helper should be about detecting
      *                    the start of a drag. Larger values are more sensitive. 1.0f is normal.
-     * @param cb          Callback to provide information and receive events
+     * @param cb Callback to provide information and receive events
      * @return a new ViewDragHelper instance
      */
-    public static MyViewDragHelper create(ViewGroup forParent, float sensitivity, Callback cb) {
+    public static MyViewDragHelper create(ViewGroup forParent, float sensitivity, ViewDragHelper.Callback cb) {
         final MyViewDragHelper helper = create(forParent, cb);
         helper.mTouchSlop = (int) (helper.mTouchSlop * (1 / sensitivity));
         return helper;
@@ -163,25 +199,28 @@ public class MyViewDragHelper {
      * This will allow VDH to use internal compatibility implementations for different
      * platform versions.
      *
-     * @param context   Context to initialize config-dependent params from
+     * @param context Context to initialize config-dependent params from
      * @param forParent Parent view to monitor
      */
-    private MyViewDragHelper(Context context, ViewGroup forParent, Callback cb) {
+    private MyViewDragHelper(Context context, ViewGroup forParent, ViewDragHelper.Callback cb) {
         if (forParent == null) {
             throw new IllegalArgumentException("Parent view may not be null");
         }
         if (cb == null) {
             throw new IllegalArgumentException("Callback may not be null");
         }
+
         mParentView = forParent;
         mCallback = cb;
+
         final ViewConfiguration vc = ViewConfiguration.get(context);
         final float density = context.getResources().getDisplayMetrics().density;
         mEdgeSize = (int) (EDGE_SIZE * density + 0.5f);
+
         mTouchSlop = vc.getScaledTouchSlop();
         mMaxVelocity = vc.getScaledMaximumFlingVelocity();
         mMinVelocity = vc.getScaledMinimumFlingVelocity();
-        mScroller = ScrollerCompat.create(context, sInterpolator);
+        mScroller = new OverScroller(context, sInterpolator);
     }
 
     /**
@@ -208,7 +247,6 @@ public class MyViewDragHelper {
     /**
      * Retrieve the current drag state of this helper. This will return one of
      * {@link #STATE_IDLE}, {@link #STATE_DRAGGING} or {@link #STATE_SETTLING}.
-     *
      * @return The current drag state
      */
     public int getViewDragState() {
@@ -247,14 +285,15 @@ public class MyViewDragHelper {
      * but {@link Callback#tryCaptureView(View, int)} will not be asked permission to
      * capture this view.
      *
-     * @param childView       Child view to capture
+     * @param childView Child view to capture
      * @param activePointerId ID of the pointer that is dragging the captured child view
      */
     public void captureChildView(View childView, int activePointerId) {
         if (childView.getParent() != mParentView) {
-            throw new IllegalArgumentException("captureChildView: parameter must be a descendant " +
-                    "of the ViewDragHelper's tracked parent view (" + mParentView + ")");
+            throw new IllegalArgumentException("captureChildView: parameter must be a descendant "
+                    + "of the ViewDragHelper's tracked parent view (" + mParentView + ")");
         }
+
         mCapturedView = childView;
         mActivePointerId = activePointerId;
         mCallback.onViewCaptured(childView, activePointerId);
@@ -270,7 +309,7 @@ public class MyViewDragHelper {
 
     /**
      * @return The ID of the pointer currently dragging the captured view,
-     * or {@link #INVALID_POINTER}.
+     *         or {@link #INVALID_POINTER}.
      */
     public int getActivePointerId() {
         return mActivePointerId;
@@ -290,6 +329,7 @@ public class MyViewDragHelper {
     public void cancel() {
         mActivePointerId = INVALID_POINTER;
         clearMotionHistory();
+
         if (mVelocityTracker != null) {
             mVelocityTracker.recycle();
             mVelocityTracker = null;
@@ -318,24 +358,26 @@ public class MyViewDragHelper {
      * If this method returns true, the caller should invoke {@link #continueSettling(boolean)}
      * on each subsequent frame to continue the motion until it returns false. If this method
      * returns false there is no further work to do to complete the movement.
-     * <p>
+     *
      * <p>This operation does not count as a capture event, though {@link #getCapturedView()}
      * will still report the sliding view while the slide is in progress.</p>
      *
-     * @param child     Child view to capture and animate
+     * @param child Child view to capture and animate
      * @param finalLeft Final left position of child
-     * @param finalTop  Final top position of child
+     * @param finalTop Final top position of child
      * @return true if animation should continue through {@link #continueSettling(boolean)} calls
      */
     public boolean smoothSlideViewTo(View child, int finalLeft, int finalTop) {
         mCapturedView = child;
         mActivePointerId = INVALID_POINTER;
+
         boolean continueSliding = forceSettleCapturedViewAt(finalLeft, finalTop, 0, 0);
         if (!continueSliding && mDragState == STATE_IDLE && mCapturedView != null) {
             // If we're in an IDLE state to begin with and aren't moving anywhere, we
             // end up having a non-null capturedView with an IDLE dragState
             mCapturedView = null;
         }
+
         return continueSliding;
     }
 
@@ -347,26 +389,27 @@ public class MyViewDragHelper {
      * returns false there is no further work to do to complete the movement.
      *
      * @param finalLeft Settled left edge position for the captured view
-     * @param finalTop  Settled top edge position for the captured view
+     * @param finalTop Settled top edge position for the captured view
      * @return true if animation should continue through {@link #continueSettling(boolean)} calls
      */
     public boolean settleCapturedViewAt(int finalLeft, int finalTop) {
         if (!mReleaseInProgress) {
-            throw new IllegalStateException("Cannot settleCapturedViewAt outside of a call to " +
-                    "Callback#onViewReleased");
+            throw new IllegalStateException("Cannot settleCapturedViewAt outside of a call to "
+                    + "Callback#onViewReleased");
         }
+
         return forceSettleCapturedViewAt(finalLeft, finalTop,
-                (int) VelocityTrackerCompat.getXVelocity(mVelocityTracker, mActivePointerId),
-                (int) VelocityTrackerCompat.getYVelocity(mVelocityTracker, mActivePointerId));
+                (int) mVelocityTracker.getXVelocity(mActivePointerId),
+                (int) mVelocityTracker.getYVelocity(mActivePointerId));
     }
 
     /**
      * Settle the captured view at the given (left, top) position.
      *
      * @param finalLeft Target left position for the captured view
-     * @param finalTop  Target top position for the captured view
-     * @param xvel      Horizontal velocity
-     * @param yvel      Vertical velocity
+     * @param finalTop Target top position for the captured view
+     * @param xvel Horizontal velocity
+     * @param yvel Vertical velocity
      * @return true if animation should continue through {@link #continueSettling(boolean)} calls
      */
     private boolean forceSettleCapturedViewAt(int finalLeft, int finalTop, int xvel, int yvel) {
@@ -374,16 +417,19 @@ public class MyViewDragHelper {
         final int startTop = mCapturedView.getTop();
         final int dx = finalLeft - startLeft;
         final int dy = finalTop - startTop;
+
         if (dx == 0 && dy == 0) {
             // Nothing to do. Send callbacks, be done.
             mScroller.abortAnimation();
             setDragState(STATE_IDLE);
             return false;
         }
+
         if (mDuration == -1) {
             mDuration = computeSettleDuration(mCapturedView, dx, dy, xvel, yvel);
         }
         mScroller.startScroll(startLeft, startTop, dx, dy, mDuration);
+
         setDragState(STATE_SETTLING);
         return true;
     }
@@ -397,12 +443,15 @@ public class MyViewDragHelper {
         final int absYVel = Math.abs(yvel);
         final int addedVel = absXVel + absYVel;
         final int addedDistance = absDx + absDy;
+
         final float xweight = xvel != 0 ? (float) absXVel / addedVel :
                 (float) absDx / addedDistance;
         final float yweight = yvel != 0 ? (float) absYVel / addedVel :
                 (float) absDy / addedDistance;
+
         int xduration = computeAxisDuration(dx, xvel, mCallback.getViewHorizontalDragRange(child));
         int yduration = computeAxisDuration(dy, yvel, mCallback.getViewVerticalDragRange(child));
+
         return (int) (xduration * xweight + yduration * yweight);
     }
 
@@ -410,11 +459,13 @@ public class MyViewDragHelper {
         if (delta == 0) {
             return 0;
         }
+
         final int width = mParentView.getWidth();
         final int halfWidth = width / 2;
         final float distanceRatio = Math.min(1f, (float) Math.abs(delta) / width);
-        final float distance = halfWidth + halfWidth *
-                distanceInfluenceForSnapDuration(distanceRatio);
+        final float distance = halfWidth + halfWidth
+                * distanceInfluenceForSnapDuration(distanceRatio);
+
         int duration;
         velocity = Math.abs(velocity);
         if (velocity > 0) {
@@ -431,7 +482,7 @@ public class MyViewDragHelper {
      * If the value is below the minimum, it will be clamped to zero.
      * If the value is above the maximum, it will be clamped to the maximum.
      *
-     * @param value  Value to clamp
+     * @param value Value to clamp
      * @param absMin Absolute value of the minimum significant value to return
      * @param absMax Absolute value of the maximum value to return
      * @return The clamped value with the same sign as <code>value</code>
@@ -448,7 +499,7 @@ public class MyViewDragHelper {
      * If the value is below the minimum, it will be clamped to zero.
      * If the value is above the maximum, it will be clamped to the maximum.
      *
-     * @param value  Value to clamp
+     * @param value Value to clamp
      * @param absMin Absolute value of the minimum significant value to return
      * @param absMax Absolute value of the maximum value to return
      * @return The clamped value with the same sign as <code>value</code>
@@ -472,19 +523,21 @@ public class MyViewDragHelper {
      * to continue the motion until it returns false.
      *
      * @param minLeft Minimum X position for the view's left edge
-     * @param minTop  Minimum Y position for the view's top edge
+     * @param minTop Minimum Y position for the view's top edge
      * @param maxLeft Maximum X position for the view's left edge
-     * @param maxTop  Maximum Y position for the view's top edge
+     * @param maxTop Maximum Y position for the view's top edge
      */
     public void flingCapturedView(int minLeft, int minTop, int maxLeft, int maxTop) {
         if (!mReleaseInProgress) {
-            throw new IllegalStateException("Cannot flingCapturedView outside of a call to " +
-                    "Callback#onViewReleased");
+            throw new IllegalStateException("Cannot flingCapturedView outside of a call to "
+                    + "Callback#onViewReleased");
         }
+
         mScroller.fling(mCapturedView.getLeft(), mCapturedView.getTop(),
-                (int) VelocityTrackerCompat.getXVelocity(mVelocityTracker, mActivePointerId),
-                (int) VelocityTrackerCompat.getYVelocity(mVelocityTracker, mActivePointerId),
+                (int) mVelocityTracker.getXVelocity(mActivePointerId),
+                (int) mVelocityTracker.getYVelocity(mActivePointerId),
                 minLeft, maxLeft, minTop, maxTop);
+
         setDragState(STATE_SETTLING);
     }
 
@@ -506,21 +559,25 @@ public class MyViewDragHelper {
             final int y = mScroller.getCurrY();
             final int dx = x - mCapturedView.getLeft();
             final int dy = y - mCapturedView.getTop();
+
             if (dx != 0) {
                 ViewCompat.offsetLeftAndRight(mCapturedView, dx);
             }
             if (dy != 0) {
                 ViewCompat.offsetTopAndBottom(mCapturedView, dy);
             }
+
             if (dx != 0 || dy != 0) {
                 mCallback.onViewPositionChanged(mCapturedView, x, y, dx, dy);
             }
+
             if (keepGoing && x == mScroller.getFinalX() && y == mScroller.getFinalY()) {
                 // Close enough. The interpolator/scroller might think we're still moving
                 // but the user sure doesn't.
                 mScroller.abortAnimation();
                 keepGoing = false;
             }
+
             if (!keepGoing) {
                 if (deferCallbacks) {
                     mParentView.post(mSetIdleRunnable);
@@ -529,6 +586,7 @@ public class MyViewDragHelper {
                 }
             }
         }
+
         return mDragState == STATE_SETTLING;
     }
 
@@ -542,6 +600,7 @@ public class MyViewDragHelper {
         mReleaseInProgress = true;
         mCallback.onViewReleased(mCapturedView, xvel, yvel);
         mReleaseInProgress = false;
+
         if (mDragState == STATE_DRAGGING) {
             // onViewReleased didn't call a method that would have changed this. Go idle.
             setDragState(STATE_IDLE);
@@ -563,7 +622,7 @@ public class MyViewDragHelper {
     }
 
     private void clearMotionHistory(int pointerId) {
-        if (mInitialMotionX == null) {
+        if (mInitialMotionX == null || !isPointerDown(pointerId)) {
             return;
         }
         mInitialMotionX[pointerId] = 0;
@@ -585,6 +644,7 @@ public class MyViewDragHelper {
             int[] iit = new int[pointerId + 1];
             int[] edip = new int[pointerId + 1];
             int[] edl = new int[pointerId + 1];
+
             if (mInitialMotionX != null) {
                 System.arraycopy(mInitialMotionX, 0, imx, 0, mInitialMotionX.length);
                 System.arraycopy(mInitialMotionY, 0, imy, 0, mInitialMotionY.length);
@@ -594,6 +654,7 @@ public class MyViewDragHelper {
                 System.arraycopy(mEdgeDragsInProgress, 0, edip, 0, mEdgeDragsInProgress.length);
                 System.arraycopy(mEdgeDragsLocked, 0, edl, 0, mEdgeDragsLocked.length);
             }
+
             mInitialMotionX = imx;
             mInitialMotionY = imy;
             mLastMotionX = lmx;
@@ -613,11 +674,15 @@ public class MyViewDragHelper {
     }
 
     private void saveLastMotion(MotionEvent ev) {
-        final int pointerCount = MotionEventCompat.getPointerCount(ev);
+        final int pointerCount = ev.getPointerCount();
         for (int i = 0; i < pointerCount; i++) {
-            final int pointerId = MotionEventCompat.getPointerId(ev, i);
-            final float x = MotionEventCompat.getX(ev, i);
-            final float y = MotionEventCompat.getY(ev, i);
+            final int pointerId = ev.getPointerId(i);
+            // If pointer is invalid then skip saving on ACTION_MOVE.
+            if (!isValidPointerForActionMove(pointerId)) {
+                continue;
+            }
+            final float x = ev.getX(i);
+            final float y = ev.getY(i);
             mLastMotionX[pointerId] = x;
             mLastMotionY[pointerId] = y;
         }
@@ -626,7 +691,7 @@ public class MyViewDragHelper {
     /**
      * Check if the given pointer ID represents a pointer that is currently down (to the best
      * of the ViewDragHelper's knowledge).
-     * <p>
+     *
      * <p>The state used to report this information is populated by the methods
      * {@link #shouldInterceptTouchEvent(MotionEvent)} or
      * {@link #processTouchEvent(MotionEvent)}. If one of these methods has not
@@ -676,13 +741,13 @@ public class MyViewDragHelper {
     /**
      * Tests scrollability within child views of v given a delta of dx.
      *
-     * @param v      View to test for horizontal scrollability
+     * @param v View to test for horizontal scrollability
      * @param checkV Whether the view v passed should itself be checked for scrollability (true),
      *               or just its children (false).
-     * @param dx     Delta scrolled in pixels along the X axis
-     * @param dy     Delta scrolled in pixels along the Y axis
-     * @param x      X coordinate of the active touch point
-     * @param y      Y coordinate of the active touch point
+     * @param dx Delta scrolled in pixels along the X axis
+     * @param dy Delta scrolled in pixels along the Y axis
+     * @param x X coordinate of the active touch point
+     * @param y Y coordinate of the active touch point
      * @return true if child views of v can be scrolled by delta of dx.
      */
     protected boolean canScroll(View v, boolean checkV, int dx, int dy, int x, int y) {
@@ -696,16 +761,16 @@ public class MyViewDragHelper {
                 // TODO: Add versioned support here for transformed views.
                 // This will not work for transformed views in Honeycomb+
                 final View child = group.getChildAt(i);
-                if (x + scrollX >= child.getLeft() && x + scrollX < child.getRight() &&
-                        y + scrollY >= child.getTop() && y + scrollY < child.getBottom() &&
-                        canScroll(child, true, dx, dy, x + scrollX - child.getLeft(),
+                if (x + scrollX >= child.getLeft() && x + scrollX < child.getRight()
+                        && y + scrollY >= child.getTop() && y + scrollY < child.getBottom()
+                        && canScroll(child, true, dx, dy, x + scrollX - child.getLeft(),
                                 y + scrollY - child.getTop())) {
                     return true;
                 }
             }
         }
-        return checkV && (ViewCompat.canScrollHorizontally(v, -dx) ||
-                ViewCompat.canScrollVertically(v, -dy));
+
+        return checkV && (v.canScrollHorizontally(-dx) || v.canScrollVertically(-dy));
     }
 
     /**
@@ -716,39 +781,48 @@ public class MyViewDragHelper {
      * @return true if the parent view should return true from onInterceptTouchEvent
      */
     public boolean shouldInterceptTouchEvent(MotionEvent ev) {
-        final int action = MotionEventCompat.getActionMasked(ev);
-        final int actionIndex = MotionEventCompat.getActionIndex(ev);
+        final int action = ev.getActionMasked();
+        final int actionIndex = ev.getActionIndex();
+
         if (action == MotionEvent.ACTION_DOWN) {
             // Reset things for a new event stream, just in case we didn't get
             // the whole previous stream.
             cancel();
         }
+
         if (mVelocityTracker == null) {
             mVelocityTracker = VelocityTracker.obtain();
         }
         mVelocityTracker.addMovement(ev);
+
         switch (action) {
             case MotionEvent.ACTION_DOWN: {
                 final float x = ev.getX();
                 final float y = ev.getY();
-                final int pointerId = MotionEventCompat.getPointerId(ev, 0);
+                final int pointerId = ev.getPointerId(0);
                 saveInitialMotion(x, y, pointerId);
+
                 final View toCapture = findTopChildUnder((int) x, (int) y);
+
                 // Catch a settling view if possible.
                 if (toCapture == mCapturedView && mDragState == STATE_SETTLING) {
                     tryCaptureViewForDrag(toCapture, pointerId);
                 }
+
                 final int edgesTouched = mInitialEdgesTouched[pointerId];
                 if ((edgesTouched & mTrackingEdges) != 0) {
                     mCallback.onEdgeTouched(edgesTouched & mTrackingEdges, pointerId);
                 }
                 break;
             }
-            case MotionEventCompat.ACTION_POINTER_DOWN: {
-                final int pointerId = MotionEventCompat.getPointerId(ev, actionIndex);
-                final float x = MotionEventCompat.getX(ev, actionIndex);
-                final float y = MotionEventCompat.getY(ev, actionIndex);
+
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                final int pointerId = ev.getPointerId(actionIndex);
+                final float x = ev.getX(actionIndex);
+                final float y = ev.getY(actionIndex);
+
                 saveInitialMotion(x, y, pointerId);
+
                 // A ViewDragHelper can only manipulate one view at a time.
                 if (mDragState == STATE_IDLE) {
                     final int edgesTouched = mInitialEdgesTouched[pointerId];
@@ -764,18 +838,23 @@ public class MyViewDragHelper {
                 }
                 break;
             }
+
             case MotionEvent.ACTION_MOVE: {
                 if (mInitialMotionX == null || mInitialMotionY == null) break;
+
                 // First to cross a touch slop over a draggable view wins. Also report edge drags.
-                final int pointerCount = MotionEventCompat.getPointerCount(ev);
+                final int pointerCount = ev.getPointerCount();
                 for (int i = 0; i < pointerCount; i++) {
-                    final int pointerId = MotionEventCompat.getPointerId(ev, i);
+                    final int pointerId = ev.getPointerId(i);
+
                     // If pointer is invalid then skip the ACTION_MOVE.
                     if (!isValidPointerForActionMove(pointerId)) continue;
-                    final float x = MotionEventCompat.getX(ev, i);
-                    final float y = MotionEventCompat.getY(ev, i);
+
+                    final float x = ev.getX(i);
+                    final float y = ev.getY(i);
                     final float dx = x - mInitialMotionX[pointerId];
                     final float dy = y - mInitialMotionY[pointerId];
+
                     final View toCapture = findTopChildUnder((int) x, (int) y);
                     final boolean pastSlop = toCapture != null && checkTouchSlop(toCapture, dx, dy);
                     if (pastSlop) {
@@ -806,6 +885,7 @@ public class MyViewDragHelper {
                         // Callback might have started an edge drag
                         break;
                     }
+
                     if (pastSlop && tryCaptureViewForDrag(toCapture, pointerId)) {
                         break;
                     }
@@ -813,17 +893,20 @@ public class MyViewDragHelper {
                 saveLastMotion(ev);
                 break;
             }
-            case MotionEventCompat.ACTION_POINTER_UP: {
-                final int pointerId = MotionEventCompat.getPointerId(ev, actionIndex);
+
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int pointerId = ev.getPointerId(actionIndex);
                 clearMotionHistory(pointerId);
                 break;
             }
+
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL: {
                 cancel();
                 break;
             }
         }
+
         return mDragState == STATE_DRAGGING;
     }
 
@@ -834,44 +917,55 @@ public class MyViewDragHelper {
      * @param ev The touch event received by the parent view
      */
     public void processTouchEvent(MotionEvent ev) {
-        final int action = MotionEventCompat.getActionMasked(ev);
-        final int actionIndex = MotionEventCompat.getActionIndex(ev);
+        final int action = ev.getActionMasked();
+        final int actionIndex = ev.getActionIndex();
+
         if (action == MotionEvent.ACTION_DOWN) {
             // Reset things for a new event stream, just in case we didn't get
             // the whole previous stream.
             cancel();
         }
+
         if (mVelocityTracker == null) {
             mVelocityTracker = VelocityTracker.obtain();
         }
         mVelocityTracker.addMovement(ev);
+
         switch (action) {
             case MotionEvent.ACTION_DOWN: {
                 final float x = ev.getX();
                 final float y = ev.getY();
-                final int pointerId = MotionEventCompat.getPointerId(ev, 0);
+                final int pointerId = ev.getPointerId(0);
                 final View toCapture = findTopChildUnder((int) x, (int) y);
+
                 saveInitialMotion(x, y, pointerId);
+
                 // Since the parent is already directly processing this touch event,
                 // there is no reason to delay for a slop before dragging.
                 // Start immediately if possible.
                 tryCaptureViewForDrag(toCapture, pointerId);
+
                 final int edgesTouched = mInitialEdgesTouched[pointerId];
                 if ((edgesTouched & mTrackingEdges) != 0) {
                     mCallback.onEdgeTouched(edgesTouched & mTrackingEdges, pointerId);
                 }
                 break;
             }
-            case MotionEventCompat.ACTION_POINTER_DOWN: {
-                final int pointerId = MotionEventCompat.getPointerId(ev, actionIndex);
-                final float x = MotionEventCompat.getX(ev, actionIndex);
-                final float y = MotionEventCompat.getY(ev, actionIndex);
+
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                final int pointerId = ev.getPointerId(actionIndex);
+                final float x = ev.getX(actionIndex);
+                final float y = ev.getY(actionIndex);
+
                 saveInitialMotion(x, y, pointerId);
+
                 // A ViewDragHelper can only manipulate one view at a time.
                 if (mDragState == STATE_IDLE) {
                     // If we're idle we can do anything! Treat it like a normal down event.
+
                     final View toCapture = findTopChildUnder((int) x, (int) y);
                     tryCaptureViewForDrag(toCapture, pointerId);
+
                     final int edgesTouched = mInitialEdgesTouched[pointerId];
                     if ((edgesTouched & mTrackingEdges) != 0) {
                         mCallback.onEdgeTouched(edgesTouched & mTrackingEdges, pointerId);
@@ -880,40 +974,49 @@ public class MyViewDragHelper {
                     // We're still tracking a captured view. If the same view is under this
                     // point, we'll swap to controlling it with this pointer instead.
                     // (This will still work if we're "catching" a settling view.)
+
                     tryCaptureViewForDrag(mCapturedView, pointerId);
                 }
                 break;
             }
+
             case MotionEvent.ACTION_MOVE: {
                 if (mDragState == STATE_DRAGGING) {
                     // If pointer is invalid then skip the ACTION_MOVE.
                     if (!isValidPointerForActionMove(mActivePointerId)) break;
-                    final int index = MotionEventCompat.findPointerIndex(ev, mActivePointerId);
-                    final float x = MotionEventCompat.getX(ev, index);
-                    final float y = MotionEventCompat.getY(ev, index);
+
+                    final int index = ev.findPointerIndex(mActivePointerId);
+                    final float x = ev.getX(index);
+                    final float y = ev.getY(index);
                     final int idx = (int) (x - mLastMotionX[mActivePointerId]);
                     final int idy = (int) (y - mLastMotionY[mActivePointerId]);
+
                     dragTo(mCapturedView.getLeft() + idx, mCapturedView.getTop() + idy, idx, idy);
+
                     saveLastMotion(ev);
                 } else {
                     // Check to see if any pointer is now over a draggable view.
-                    final int pointerCount = MotionEventCompat.getPointerCount(ev);
+                    final int pointerCount = ev.getPointerCount();
                     for (int i = 0; i < pointerCount; i++) {
-                        final int pointerId = MotionEventCompat.getPointerId(ev, i);
+                        final int pointerId = ev.getPointerId(i);
+
                         // If pointer is invalid then skip the ACTION_MOVE.
                         if (!isValidPointerForActionMove(pointerId)) continue;
-                        final float x = MotionEventCompat.getX(ev, i);
-                        final float y = MotionEventCompat.getY(ev, i);
+
+                        final float x = ev.getX(i);
+                        final float y = ev.getY(i);
                         final float dx = x - mInitialMotionX[pointerId];
                         final float dy = y - mInitialMotionY[pointerId];
+
                         reportNewEdgeDrags(dx, dy, pointerId);
                         if (mDragState == STATE_DRAGGING) {
                             // Callback might have started an edge drag.
                             break;
                         }
+
                         final View toCapture = findTopChildUnder((int) x, (int) y);
-                        if (checkTouchSlop(toCapture, dx, dy) &&
-                                tryCaptureViewForDrag(toCapture, pointerId)) {
+                        if (checkTouchSlop(toCapture, dx, dy)
+                                && tryCaptureViewForDrag(toCapture, pointerId)) {
                             break;
                         }
                     }
@@ -921,26 +1024,29 @@ public class MyViewDragHelper {
                 }
                 break;
             }
-            case MotionEventCompat.ACTION_POINTER_UP: {
-                final int pointerId = MotionEventCompat.getPointerId(ev, actionIndex);
+
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int pointerId = ev.getPointerId(actionIndex);
                 if (mDragState == STATE_DRAGGING && pointerId == mActivePointerId) {
                     // Try to find another pointer that's still holding on to the captured view.
                     int newActivePointer = INVALID_POINTER;
-                    final int pointerCount = MotionEventCompat.getPointerCount(ev);
+                    final int pointerCount = ev.getPointerCount();
                     for (int i = 0; i < pointerCount; i++) {
-                        final int id = MotionEventCompat.getPointerId(ev, i);
+                        final int id = ev.getPointerId(i);
                         if (id == mActivePointerId) {
                             // This one's going away, skip.
                             continue;
                         }
-                        final float x = MotionEventCompat.getX(ev, i);
-                        final float y = MotionEventCompat.getY(ev, i);
-                        if (findTopChildUnder((int) x, (int) y) == mCapturedView &&
-                                tryCaptureViewForDrag(mCapturedView, id)) {
+
+                        final float x = ev.getX(i);
+                        final float y = ev.getY(i);
+                        if (findTopChildUnder((int) x, (int) y) == mCapturedView
+                                && tryCaptureViewForDrag(mCapturedView, id)) {
                             newActivePointer = mActivePointerId;
                             break;
                         }
                     }
+
                     if (newActivePointer == INVALID_POINTER) {
                         // We didn't find another pointer still touching the view, release it.
                         releaseViewForPointerUp();
@@ -949,6 +1055,7 @@ public class MyViewDragHelper {
                 clearMotionHistory(pointerId);
                 break;
             }
+
             case MotionEvent.ACTION_UP: {
                 if (mDragState == STATE_DRAGGING) {
                     releaseViewForPointerUp();
@@ -956,6 +1063,7 @@ public class MyViewDragHelper {
                 cancel();
                 break;
             }
+
             case MotionEvent.ACTION_CANCEL: {
                 if (mDragState == STATE_DRAGGING) {
                     dispatchViewReleased(0, 0);
@@ -980,6 +1088,7 @@ public class MyViewDragHelper {
         if (checkNewEdgeDrag(dy, dx, pointerId, EDGE_BOTTOM)) {
             dragsStarted |= EDGE_BOTTOM;
         }
+
         if (dragsStarted != 0) {
             mEdgeDragsInProgress[pointerId] |= dragsStarted;
             mCallback.onEdgeDragStarted(dragsStarted, pointerId);
@@ -989,10 +1098,11 @@ public class MyViewDragHelper {
     private boolean checkNewEdgeDrag(float delta, float odelta, int pointerId, int edge) {
         final float absDelta = Math.abs(delta);
         final float absODelta = Math.abs(odelta);
-        if ((mInitialEdgesTouched[pointerId] & edge) != edge || (mTrackingEdges & edge) == 0 ||
-                (mEdgeDragsLocked[pointerId] & edge) == edge ||
-                (mEdgeDragsInProgress[pointerId] & edge) == edge ||
-                (absDelta <= mTouchSlop && absODelta <= mTouchSlop)) {
+
+        if ((mInitialEdgesTouched[pointerId] & edge) != edge  || (mTrackingEdges & edge) == 0
+                || (mEdgeDragsLocked[pointerId] & edge) == edge
+                || (mEdgeDragsInProgress[pointerId] & edge) == edge
+                || (absDelta <= mTouchSlop && absODelta <= mTouchSlop)) {
             return false;
         }
         if (absDelta < absODelta * 0.5f && mCallback.onEdgeLock(edge)) {
@@ -1008,8 +1118,8 @@ public class MyViewDragHelper {
      * along that axis will not count toward the slop check.
      *
      * @param child Child to check
-     * @param dx    Motion since initial position along X axis
-     * @param dy    Motion since initial position along Y axis
+     * @param dx Motion since initial position along X axis
+     * @param dy Motion since initial position along Y axis
      * @return true if the touch slop has been crossed
      */
     private boolean checkTouchSlop(View child, float dx, float dy) {
@@ -1018,6 +1128,7 @@ public class MyViewDragHelper {
         }
         final boolean checkHorizontal = mCallback.getViewHorizontalDragRange(child) > 0;
         final boolean checkVertical = mCallback.getViewVerticalDragRange(child) > 0;
+
         if (checkHorizontal && checkVertical) {
             return dx * dx + dy * dy > mTouchSlop * mTouchSlop;
         } else if (checkHorizontal) {
@@ -1031,7 +1142,7 @@ public class MyViewDragHelper {
     /**
      * Check if any pointer tracked in the current gesture has crossed
      * the required slop threshold.
-     * <p>
+     *
      * <p>This depends on internal state populated by
      * {@link #shouldInterceptTouchEvent(MotionEvent)} or
      * {@link #processTouchEvent(MotionEvent)}. You should only rely on
@@ -1055,7 +1166,7 @@ public class MyViewDragHelper {
     /**
      * Check if the specified pointer tracked in the current gesture has crossed
      * the required slop threshold.
-     * <p>
+     *
      * <p>This depends on internal state populated by
      * {@link #shouldInterceptTouchEvent(MotionEvent)} or
      * {@link #processTouchEvent(MotionEvent)}. You should only rely on
@@ -1064,17 +1175,20 @@ public class MyViewDragHelper {
      *
      * @param directions Combination of direction flags, see {@link #DIRECTION_HORIZONTAL},
      *                   {@link #DIRECTION_VERTICAL}, {@link #DIRECTION_ALL}
-     * @param pointerId  ID of the pointer to slop check as specified by MotionEvent
+     * @param pointerId ID of the pointer to slop check as specified by MotionEvent
      * @return true if the slop threshold has been crossed, false otherwise
      */
     public boolean checkTouchSlop(int directions, int pointerId) {
         if (!isPointerDown(pointerId)) {
             return false;
         }
+
         final boolean checkHorizontal = (directions & DIRECTION_HORIZONTAL) == DIRECTION_HORIZONTAL;
         final boolean checkVertical = (directions & DIRECTION_VERTICAL) == DIRECTION_VERTICAL;
+
         final float dx = mLastMotionX[pointerId] - mInitialMotionX[pointerId];
         final float dy = mLastMotionY[pointerId] - mInitialMotionY[pointerId];
+
         if (checkHorizontal && checkVertical) {
             return dx * dx + dy * dy > mTouchSlop * mTouchSlop;
         } else if (checkHorizontal) {
@@ -1121,10 +1235,10 @@ public class MyViewDragHelper {
     private void releaseViewForPointerUp() {
         mVelocityTracker.computeCurrentVelocity(1000, mMaxVelocity);
         final float xvel = clampMag(
-                VelocityTrackerCompat.getXVelocity(mVelocityTracker, mActivePointerId),
+                mVelocityTracker.getXVelocity(mActivePointerId),
                 mMinVelocity, mMaxVelocity);
         final float yvel = clampMag(
-                VelocityTrackerCompat.getYVelocity(mVelocityTracker, mActivePointerId),
+                mVelocityTracker.getYVelocity(mActivePointerId),
                 mMinVelocity, mMaxVelocity);
         dispatchViewReleased(xvel, yvel);
     }
@@ -1142,6 +1256,7 @@ public class MyViewDragHelper {
             clampedY = mCallback.clampViewPositionVertical(mCapturedView, top, dy);
             ViewCompat.offsetTopAndBottom(mCapturedView, clampedY - oldTop);
         }
+
         if (dx != 0 || dy != 0) {
             final int clampedDx = clampedX - oldLeft;
             final int clampedDy = clampedY - oldTop;
@@ -1168,18 +1283,18 @@ public class MyViewDragHelper {
      * parent view's coordinate system.
      *
      * @param view Child view of the parent to hit test
-     * @param x    X position to test in the parent's coordinate system
-     * @param y    Y position to test in the parent's coordinate system
+     * @param x X position to test in the parent's coordinate system
+     * @param y Y position to test in the parent's coordinate system
      * @return true if the supplied view is under the given point, false otherwise
      */
     public boolean isViewUnder(View view, int x, int y) {
         if (view == null) {
             return false;
         }
-        return x >= view.getLeft() &&
-                x < view.getRight() &&
-                y >= view.getTop() &&
-                y < view.getBottom();
+        return x >= view.getLeft()
+                && x < view.getRight()
+                && y >= view.getTop()
+                && y < view.getBottom();
     }
 
     /**
@@ -1194,8 +1309,8 @@ public class MyViewDragHelper {
         final int childCount = mParentView.getChildCount();
         for (int i = childCount - 1; i >= 0; i--) {
             final View child = mParentView.getChildAt(mCallback.getOrderedChildIndex(i));
-            if (x >= child.getLeft() && x < child.getRight() &&
-                    y >= child.getTop() && y < child.getBottom()) {
+            if (x >= child.getLeft() && x < child.getRight()
+                    && y >= child.getTop() && y < child.getBottom()) {
                 return child;
             }
         }
@@ -1204,10 +1319,12 @@ public class MyViewDragHelper {
 
     private int getEdgesTouched(int x, int y) {
         int result = 0;
+
         if (x < mParentView.getLeft() + mEdgeSize) result |= EDGE_LEFT;
         if (y < mParentView.getTop() + mEdgeSize) result |= EDGE_TOP;
         if (x > mParentView.getRight() - mEdgeSize) result |= EDGE_RIGHT;
         if (y > mParentView.getBottom() - mEdgeSize) result |= EDGE_BOTTOM;
+
         return result;
     }
 
@@ -1221,4 +1338,3 @@ public class MyViewDragHelper {
         return true;
     }
 }
-

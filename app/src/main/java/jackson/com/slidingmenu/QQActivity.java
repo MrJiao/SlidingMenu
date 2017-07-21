@@ -18,8 +18,9 @@ public class QQActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qq);
         SlidingMenu sm = (SlidingMenu) findViewById(R.id.sm);
-        sm.getBuilder(new ContentFragment(),new MenuFragment(),getFragmentManager(), 870)
-        .setMenuStartLeft(-500)
+        int deviceWidth = SizeUtil.getDeviceWidth(this);
+        sm.getBuilder(new ContentFragment(),new MenuFragment(),getFragmentManager(), (int) (deviceWidth*.8f))
+        .setMenuStartLeft((int) ((0-deviceWidth)*.4f))
                 .build();
     }
 }

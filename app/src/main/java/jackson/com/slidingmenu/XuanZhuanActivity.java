@@ -37,6 +37,7 @@ public class XuanZhuanActivity extends FragmentActivity {
         public void onContentChanged(View content, float percent) {
             if(contentfirst){
                 content.setPivotX(0);
+                content.setPivotY(content.getHeight()/2);
                 contentfirst = false;
             }
             content.setScaleX(1 - .3f * percent);

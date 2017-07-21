@@ -37,6 +37,7 @@ public class KugouActivity extends FragmentActivity {
         public void onContentChanged(View content, float percent) {
             if(first){
                 content.setPivotX(0);
+                content.setPivotY(content.getHeight()/2);
                 first = false;
             }
             content.setScaleX(1 - .3f * percent);
