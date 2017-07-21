@@ -29,7 +29,7 @@ public class KugouActivity extends FragmentActivity {
     }
 
 
-    class ScaleChange implements SlidingMenu.OnViewChangedListener {
+    private class ScaleChange implements SlidingMenu.OnViewChangedListener {
 
         private boolean first=true;
 
@@ -54,7 +54,7 @@ public class KugouActivity extends FragmentActivity {
     }
 
 
-    class StateListener implements SlidingMenu.OnStateChangedListener {
+    private class StateListener implements SlidingMenu.OnStateChangedListener {
         @Override
         public void onState(int state) {
             String s = "";
